@@ -3,6 +3,7 @@ from langgraph.graph import StateGraph, END
 from langsmith import traceable as ls_traceable
 from langchain_openai import ChatOpenAI
 
+
 # --- Define compatible ToolCallingState ---
 class ToolCallingState(TypedDict, total=False):
     task: str
@@ -13,6 +14,8 @@ class ToolCallingState(TypedDict, total=False):
     messages: Optional[List[Any]]
     next_steps: Optional[List[Any]]
     step_results: Optional[List[Any]]
+
+
 # --- Tool: Budget and weather validation ---
 @ls_traceable(name="ValidatorTool")
 def check_budget_and_weather(state: ToolCallingState, **kwargs) -> ToolCallingState:
@@ -21,8 +24,9 @@ def check_budget_and_weather(state: ToolCallingState, **kwargs) -> ToolCallingSt
     return {
         **state,
         "validation_passed": passed,
-        "tools_used": state.get("tools_used", []) + ["validator"]
+        "tools_used": state.get("tools_used", []) + ["validator"],
     }
+
 
 # --- Planner Node using OpenAI ---
 @ls_traceable(name="PlannerNode")
@@ -30,10 +34,8 @@ def planner_node(state: ToolCallingState, **kwargs) -> ToolCallingState:
     llm = ChatOpenAI(temperature=0.3)
     prompt = f"Plan a {state['task']} with these constraints: {state['constraints']}"
     plan_output = llm.invoke(prompt).content
-    return {
-        **state,
-        "plan": plan_output
-    }
+    return {**state, "plan": plan_output}
+
 
 # --- LangGraph flow ---
 graph = StateGraph(ToolCallingState)
@@ -46,7 +48,7 @@ graph.add_edge("planner", "validator")
 graph.add_conditional_edges(
     "validator",
     lambda x: "true" if x.get("validation_passed") else "false",
-    {"true": END, "false": "planner"}
+    {"true": END, "false": "planner"},
 )
 
 workflow = graph.compile()
@@ -55,11 +57,7 @@ workflow = graph.compile()
 if __name__ == "__main__":
     inputs = {
         "task": "trip",
-        "constraints": {
-            "destination": "Europe",
-            "budget": "$3000",
-            "weather": "sunny"
-        }
+        "constraints": {"destination": "Europe", "budget": "$3000", "weather": "sunny"},
     }
     result = workflow.invoke(inputs)
     print("\nFinal Plan:", result["plan"])
