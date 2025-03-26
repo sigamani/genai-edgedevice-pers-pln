@@ -102,12 +102,3 @@ Contributions are what make the open source community amazing. Fork the repo, cr
 ## 📄 License
 
 Distributed under the Apache 2.0 License.
-
----
-
-## 🙏 Acknowledgements
-
-- [llama.cpp](https://github.com/ggerganov/llama.cpp)
-- [mlc-llm](https://github.com/mlc-ai/mlc-llm)
-- [Hugging Face Transformers](https://github.com/huggingface/transformers)
-- [Best README Template](https://github.com/othneildrew/Best-README-Template)
