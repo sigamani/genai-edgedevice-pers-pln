@@ -2,6 +2,7 @@ import json
 import os
 from run_planner import workflow
 from langsmith import traceable as ls_traceable
+from langsmith.run_helpers import trace
 import wandb
 
 BENCHMARKS_DIR = os.path.join(os.path.dirname(__file__), "benchmarks")
@@ -38,26 +39,29 @@ def run_benchmark():
 
                 result = workflow.invoke(input_state)
 
-                result_entry = {
-                    "task": task_input,
-                    "constraints": constraints,
-                    "plan": result.get("plan"),
-                    "validation_passed": result.get("validation_passed"),
-                    "tools_used": result.get("tools_used"),
-                    "expected_properties": expected_properties
-                }
+                with trace(name="benchmark-single-run") as run:
+                    run.add_tags([f"validation_passed:{result.get('validation_passed', False)}"])
 
-                # Log to Weights & Biases
-                wandb.log({
-                    "input_text": task_input,
-                    "plan_text": result.get("plan", ""),
-                    "validation_passed": int(result.get("validation_passed", False)),
-                    "tools_used_str": ", ".join(result.get("tools_used", [])) if result.get("tools_used") else "",
-                    "num_tools_used": len(result.get("tools_used", [])),
-                    "filename": filename
-                })
+                    result_entry = {
+                        "task": task_input,
+                        "constraints": constraints,
+                        "plan": result.get("plan"),
+                        "validation_passed": result.get("validation_passed"),
+                        "tools_used": result.get("tools_used"),
+                        "expected_properties": expected_properties
+                    }
 
-                results.append(result_entry)
+                    # Log to Weights & Biases
+                    wandb.log({
+                        "input_text": task_input,
+                        "plan_text": result.get("plan", ""),
+                        "validation_passed": int(result.get("validation_passed", False)),
+                        "tools_used_str": ", ".join(result.get("tools_used", [])) if result.get("tools_used") else "",
+                        "num_tools_used": len(result.get("tools_used", [])),
+                        "filename": filename
+                    })
+
+                    results.append(result_entry)
 
     print(f"✅ Evaluated {len(results)} prompts across all benchmarks.")
 

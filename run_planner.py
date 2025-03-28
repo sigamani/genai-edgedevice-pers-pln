@@ -1,5 +1,6 @@
 from langgraph.graph import StateGraph, END
 from langsmith import traceable as ls_traceable
+from langsmith.client import Client
 from planner_model_runners import planner_model_runner
 from typing import TypedDict, Optional, List, Any
 import argparse
@@ -38,10 +39,12 @@ def planner_node(state: ToolCallingState, **kwargs) -> ToolCallingState:
         "Make sure to include the word 'budget' and mention the 'weather' to help with validation."
     )
     plan_output = planner_model_runner(prompt, backend=state.get("backend", "openai"))
+
     return {
         **state,
         "plan": plan_output,
-        "attempts": attempts
+        "attempts": attempts,
+        "tags": [f"validation_passed:{'budget' in plan_output.lower() and 'weather' in plan_output.lower()}"]
     }
 
 # --- LangGraph flow ---

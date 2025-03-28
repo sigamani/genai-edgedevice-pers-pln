@@ -2,8 +2,8 @@ import json
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-NATURAL_PLAN_PATH = os.path.join(BASE_DIR, "natural-plan/data/calendar_scheduling.json")
-OUTPUT_PATH = os.path.join(BASE_DIR, "calendar_scheduling.jsonl")
+NATURAL_PLAN_PATH = os.path.join(BASE_DIR, "natural-plan/data/trip_planning.json")
+OUTPUT_PATH = os.path.join(BASE_DIR, "trip_planning.jsonl")
 
 
 def convert_naturalplan_to_prompts():
