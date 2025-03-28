@@ -1,48 +1,67 @@
 import json
+import os
+from run_planner import workflow
+from langsmith import traceable as ls_traceable
 import wandb
-from planner.plan import plan
-from planner.mock_runner import mock_model_runner
 
-# --- Simple evaluation logic ---
-def evaluate(output: str, expectations: dict) -> dict:
-    results = {}
-    for key, val in expectations.items():
-        results[key] = str(val).lower() in output.lower()
-    return results
+BENCHMARKS_DIR = os.path.join(os.path.dirname(__file__), "benchmarks")
+JSONL_FILES = [
+    "calendar_scheduling.jsonl",
+    "trip_planning.jsonl",
+    "meeting_planning.jsonl"
+    ]
 
-# --- Main benchmark runner with W&B ---
-def main():
-    wandb.init(project="agentic-planner-8b", name="benchmark-run", config={"backend": "mock"})
+# Initialise Weights & Biases logging
+wandb.init(project="agentic-planner-benchmark", name="benchmark-run", job_type="benchmark")
+
+
+@ls_traceable(name="BenchmarkLoop")
+def run_benchmark():
     results = []
 
-    with open("benchmarks/planner_prompts.jsonl") as f:
-        for line in f:
-            task = json.loads(line)
-            output = plan(task["task_type"], task["constraints"], model_runner=mock_model_runner)
-            evaluation = evaluate(output, task["expected_properties"])
-            score = sum(evaluation.values()) / len(evaluation)
+    for filename in JSONL_FILES:
+        file_path = os.path.join(BENCHMARKS_DIR, filename)
+        print(f"🔍 Running benchmarks from {file_path}")
 
-            # Log to wandb
-            wandb.log({
-                "task_id": task["id"],
-                "task_type": task["task_type"],
-                "input": task["input"],
-                "output": output,
-                "score": score,
-                **{f"constraint_success/{k}": v for k, v in evaluation.items()}
-            })
+        with open(file_path, "r") as f:
+            for line in f:
+                prompt_data = json.loads(line)
+                task_input = prompt_data.get("input")
+                constraints = prompt_data.get("constraints", {})
+                expected_properties = prompt_data.get("expected_properties", {})
 
-            results.append({
-                "id": task["id"],
-                "input": task["input"],
-                "output": output,
-                "evaluation": evaluation,
-                "score": score
-            })
+                input_state = {
+                    "task": task_input,
+                    "constraints": constraints,
+                    "backend": "openai"  # or "llama.cpp", etc.
+                }
 
-    print("\n--- Evaluation Results ---")
-    for r in results:
-        print(f"{r['id']} — Score: {r['score']*100:.1f}% — {r['evaluation']}")
+                result = workflow.invoke(input_state)
+
+                result_entry = {
+                    "task": task_input,
+                    "constraints": constraints,
+                    "plan": result.get("plan"),
+                    "validation_passed": result.get("validation_passed"),
+                    "tools_used": result.get("tools_used"),
+                    "expected_properties": expected_properties
+                }
+
+                # Log to Weights & Biases
+                wandb.log({
+                    "input_text": task_input,
+                    "plan_text": result.get("plan", ""),
+                    "validation_passed": int(result.get("validation_passed", False)),
+                    "tools_used_str": ", ".join(result.get("tools_used", [])) if result.get("tools_used") else "",
+                    "num_tools_used": len(result.get("tools_used", [])),
+                    "filename": filename
+                })
+
+                results.append(result_entry)
+
+    print(f"✅ Evaluated {len(results)} prompts across all benchmarks.")
+
 
 if __name__ == "__main__":
-    main()
+    run_benchmark()
+    wandb.finish()

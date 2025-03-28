@@ -20,7 +20,6 @@
     <a href="https://github.com/your-username/ai-planner-on-edge/issues">Report Bug</a>
     ·
     <a href="https://github.com/your-username/ai-planner-on-edge/issues">Request Feature</a>
-  </p>
 </p>
 
 ---
@@ -57,7 +56,13 @@ pip install -r requirements.txt
 ### Run Planner with Mocked LLM
 
 ```bash
-python test_plan.py
+python run_planner.py
+```
+
+### Run Benchmarks
+
+```bash
+python run_benchmarks.py
 ```
 
 ### Run with llama.cpp
@@ -90,12 +95,6 @@ GitHub Actions runs tests on:
 Models are deployable using:
 - `llama.cpp` on CPU-only systems (Raspberry Pi, laptops)
 - `mlc-llm` for GPU-accelerated inference on Android, iOS, and WebGPU
-
----
-
-## 🤝 Contributing
-
-Contributions are what make the open source community amazing. Fork the repo, create a feature branch, and submit a PR.
 
 ---
 
