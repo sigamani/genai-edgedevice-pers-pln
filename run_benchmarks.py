@@ -11,12 +11,7 @@ from langgraph.graph import StateGraph
 # --- LangSmith Tracing Configuration ---
 os.environ["LANGSMITH_TRACING"] = "true"
 os.environ["LANGCHAIN_PROJECT"] = "planner-optimisation-v1"
-
-# --- Filepath to Prequantised Model (GGUF) ---ƒ
-MODEL_PATH = os.path.expanduser(
-    "~/.cache/huggingface/hub/models--TheBloke--Mistral-7B-Instruct-v0.2-GGUF/snapshots/3a6fbf4a41a1d52e415a4958cde6856d34b2db93/mistral-7b-instruct-v0.2.Q3_K_M.gguf"
-)
-
+os.environ["LLAMA_LOG_LEVEL"] = "ERROR"
 
 # --- LangGraph State Definition ---
 class PlannerState(TypedDict, total=False):
@@ -34,13 +29,15 @@ class PlannerState(TypedDict, total=False):
 
 # --- LLM Wrapper With Edge Metadata ---
 base_llm = LlamaCpp(
-    model_path=MODEL_PATH,
+    model_path="models/mistral-7b-instruct-v0.2.Q3_K_M.gguf",
     temperature=0.2,
-    n_ctx=2048,
-    n_threads=8,
-    n_gpu_layers=35,
+    n_ctx=1024,
+    n_threads=os.cpu_count(),
+    n_gpu_layers=64,
     f16_kv=True,
-    n_predict=1024,
+    n_predict=128,
+    n_batch=64,
+    llama_log_level="error",
     verbose=False,
 )
 
@@ -227,15 +224,13 @@ if __name__ == "__main__":
     EXAMPLES = []
     with open(dataset_path, "r") as f:
         for i, line in enumerate(f):
-            if i >= 3:
-                break
             item = json.loads(line)
-            EXAMPLES.append(
-                {
-                    "task": item["inputs"]["prompt"],
-                    "golden_plan": item["outputs"]["golden_plan"],
-                }
-            )
+            task_text = item.get("inputs", {}).get("prompt", "")
+            golden_plan_text = item.get("outputs", {}).get("golden_plan", "")
+            EXAMPLES.append({
+                "task": task_text.strip(),
+                "golden_plan": golden_plan_text.strip(),
+            })
 
     total, correct = 0, 0
     for example in EXAMPLES:
