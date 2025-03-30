@@ -40,4 +40,4 @@ jobs:
       
     - name: Run LangGraph planner
       run: |
-        python run_planner.py
+        python run_planner.py --task "Plan a trip to Rome and Florence" --backend mlc-llm
