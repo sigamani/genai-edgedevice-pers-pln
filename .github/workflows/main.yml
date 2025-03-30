@@ -40,4 +40,4 @@ jobs:
       
     - name: Run LangGraph planner
       run: |
-        python langgraph_planner.py
+        python run_planner.py
