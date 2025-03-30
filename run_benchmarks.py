@@ -1,224 +1,223 @@
-import json
+# langgraph_planner_pipeline.py — Generic Agentic Planning Workflow with State Tracking and Edge Metadata Logging
+
 import os
-import concurrent.futures
-import argparse
-from run_planner import workflow
-from langsmith import traceable as ls_traceable
-from langsmith import trace
-import wandb
-from planner_model_runners import llama_cpp_runner
+import json
+import re
+import platform
+import psutil
+from typing import List, Tuple, TypedDict
+from langchain_community.llms import LlamaCpp
+from langchain_core.prompts import PromptTemplate
+from langsmith.client import Client
+from langgraph.graph import StateGraph, END
 
-BENCHMARKS_DIR = os.path.join(os.path.dirname(__file__), "benchmarks")
-JSONL_FILES = [
-    "calendar_scheduling.jsonl",
-    "trip_planning.jsonl",
-    "meeting_planning.jsonl",
-]
+# --- LangSmith Tracing Configuration ---
+os.environ["LANGSMITH_TRACING"] = "true"
+os.environ["LANGSMITH_PROJECT"] = "planner-optimisation-v1"
 
-# Initialise Weights & Biases logging
-wandb.init(
-    project="agentic-planner-benchmark", name="benchmark-run", job_type="benchmark"
+# --- Filepath to Prequantised Model (GGUF) ---
+MODEL_PATH = os.path.expanduser(
+    "~/.cache/huggingface/hub/models--TheBloke--Mistral-7B-Instruct-v0.2-GGUF/snapshots/3a6fbf4a41a1d52e415a4958cde6856d34b2db93/mistral-7b-instruct-v0.2.Q3_K_M.gguf"
 )
 
+# --- LangGraph State Definition ---
+class PlannerState(TypedDict, total=False):
+    task: str
+    history: List[Tuple[str, str]]
+    plan: str
+    golden_plan: str
+    subtasks: List[str]
+    completed_subtasks: List[str]
+    constraint_failures: List[str]
+    reasoning: str
+    judgement: dict
+    system_metrics: dict
 
-@ls_traceable(name="benchmark-run")
-def run_benchmark(backend, model_path=None):
-    results = []
+# --- LLM Wrapper With Edge Metadata ---
+base_llm = LlamaCpp(
+    model_path=MODEL_PATH,
+    temperature=0.2,
+    n_ctx=2048,
+    n_threads=8,
+    n_gpu_layers=35,
+    f16_kv=True,
+    n_predict=1024,
+    verbose=False,
+)
 
-    def process_line(line, filename):
-        prompt_data = json.loads(line)
-        task_input = prompt_data.get("input")
-        constraints = prompt_data.get("constraints", {})
-        expected_properties = prompt_data.get("expected_properties", {})
+llm = base_llm.with_config({
+    "metadata": {
+        "llm_model_format": "gguf",
+        "quantisation": "Q4_K_M",
+        "backend": "llama.cpp",
+        "ram_usage": "under_8GB",
+        "prompt_format": "plain-text"
+    },
+    "tags": ["edge", "int4", "quantised", "local"]
+})
 
-        input_state = {
-            "task": task_input,
-            "constraints": constraints,
-            "backend": backend,
-            "model_path": model_path,
+# --- Prompt Templates ---
+subtask_prompt = PromptTemplate.from_template("""
+You are a task planner assistant. Break the user's high-level request into concrete subtasks.
+
+Original task:
+""\"
+{task}
+""\"
+
+Return a bullet point list of subtasks.
+""")
+
+planner_prompt = PromptTemplate.from_template("""
+You are a helpful assistant. Given a task, generate a proposed plan.
+
+Task:
+{task}
+
+Plan:
+""")
+
+judger_prompt = PromptTemplate.from_template("""
+You are an expert evaluator for calendar scheduling tasks.
+
+Your job is to compare a model-generated meeting plan (called the *prediction*) with a reference plan (called the *golden plan*). Both plans must specify a meeting time in the format:
+
+    "<Day>, <HH:MM> - <HH:MM>"
+
+Return only JSON in this format:
+{{
+  "score": 1 or 0,
+  "reason": "short natural language explanation"
+}}
+
+---
+
+TASK: {task}
+
+PREDICTION: {prediction}
+GOLDEN: {golden_plan}
+
+Compare both plans.
+
+If:
+- Day matches (case-insensitive)
+- Start and end times match exactly
+
+→ score = 1
+
+Else → score = 0
+
+Return only JSON as shown.
+""")
+
+# --- System Info Helper ---
+def get_system_metrics():
+    mem = psutil.virtual_memory()
+    return {
+        "ram_total_gb": round(mem.total / 1e9, 2),
+        "ram_used_gb": round(mem.used / 1e9, 2),
+        "cpu": platform.processor(),
+        "platform": platform.system()
+    }
+
+# --- LangGraph Nodes ---
+def subtask_generator(state: PlannerState) -> PlannerState:
+    response = (subtask_prompt | llm).invoke({"task": state["task"]})
+    subtasks = [line.strip("- ") for line in response.strip().split("\n") if line.strip()]
+    return {**state, "subtasks": subtasks, "completed_subtasks": []}
+
+def planner_node(state: PlannerState) -> PlannerState:
+    result = (planner_prompt | llm).invoke({"task": state["task"]})
+    return {**state, "plan": result.strip()}
+
+def judge_node(state: PlannerState) -> PlannerState:
+    prediction = state.get("plan")
+    golden = state.get("golden_plan")
+    if not golden:
+        return state
+
+    judge_input = {
+        "task": state["task"],
+        "prediction": prediction,
+        "golden_plan": golden
+    }
+    judgement_raw = (judger_prompt | llm).invoke(judge_input)
+
+    # 🔧 Extract first JSON object from messy LLM output
+    match = re.search(r'\{.*?\}', judgement_raw, re.DOTALL)
+    if match:
+        try:
+            judgement = json.loads(match.group(0))
+        except json.JSONDecodeError as e:
+            judgement = {
+                "score": 0,
+                "reason": f"Failed to parse JSON: {e}",
+                "raw": judgement_raw
+            }
+    else:
+        judgement = {
+            "score": 0,
+            "reason": "No JSON object found in LLM output.",
+            "raw": judgement_raw
         }
 
-        with trace(name="benchmark-single-run", tags=[f"{filename}", backend]) as run:
-            if backend == "llama.cpp":
-                result = llama_cpp_runner(task_input, model_path)
-            else:
-                result = workflow.invoke(input_state)
-            run.output = result  # optional but recommended
-            run.add_tags([f"validation_passed:{result.get('validation_passed', False)}"])
+    state["judgement"] = judgement
+    return state
 
-            result_entry = {
-                "task": task_input,
-                "constraints": constraints,
-                "plan": result.get("plan"),
-                "validation_passed": result.get("validation_passed"),
-                "tools_used": result.get("tools_used"),
-                "expected_properties": expected_properties,
-            }
+def state_tracker(state: PlannerState) -> PlannerState:
+    completed = state.get("completed_subtasks", [])
+    if "plan" in state and "subtasks" in state:
+        for sub in state["subtasks"]:
+            if sub.lower() in state["plan"].lower() and sub not in completed:
+                completed.append(sub)
+    state["completed_subtasks"] = completed
+    return state
 
-            wandb.log(
-                {
-                    "input_text": task_input,
-                    "plan_text": result.get("plan", ""),
-                    "validation_passed": int(result.get("validation_passed", False)),
-                    "tools_used_str": ", ".join(result.get("tools_used", []))
-                    if result.get("tools_used")
-                    else "",
-                    "num_tools_used": len(result.get("tools_used", [])),
-                    "filename": filename,
-                }
-            )
+def log_feedback(state: PlannerState) -> PlannerState:
+    print("\n--- PLAN ---\n", state.get("plan"))
+    if "judgement" in state:
+        print("✅ Evaluation:", state["judgement"])
+    if "completed_subtasks" in state:
+        print("🧠 Subtasks Completed:", state["completed_subtasks"])
+    print("📟 System:", state.get("system_metrics"))
+    return state
 
-            return result_entry
+# --- LangGraph Construction ---
+graph = StateGraph(PlannerState)
+graph.add_node("subtask_generator", subtask_generator)
+graph.add_node("planner", planner_node)
+graph.add_node("judge", judge_node)
+graph.add_node("state_tracker", state_tracker)
+graph.add_node("feedback", log_feedback)
 
-    for filename in JSONL_FILES:
-        file_path = os.path.join(BENCHMARKS_DIR, filename)
-        print(f"🔍 Running benchmarks from {file_path}")
+graph.set_entry_point("subtask_generator")
+graph.add_edge("subtask_generator", "planner")
+graph.add_edge("planner", "state_tracker")
+graph.add_edge("state_tracker", "judge")
+graph.add_edge("judge", "feedback")
+graph.set_finish_point("feedback")
+compiled_graph = graph.compile()
 
-        with open(file_path, "r") as f:
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                futures = []
-                for line in f:
-                    futures.append(executor.submit(process_line, line, filename))
-                for future in concurrent.futures.as_completed(futures):
-                    results.append(future.result())
-
-    print(f"✅ Evaluated {len(results)} prompts across all benchmarks.")
-
-
+# --- Entry Point for Test Execution ---
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run benchmarks for agentic planner")
-    parser.add_argument(
-        "--backend",
-        type=str,
-        default="llama.cpp",
-        help="Model backend to use (openai, llama.cpp, mlc-llm)",
-    )
-    parser.add_argument(
-        "--model-path",
-        type=str,
-        required=False,
-        help="Path to local GGUF model for llama.cpp backend",
-    )
-    args = parser.parse_args()
+    # Load calendar scheduling examples from file
+    dataset_path = "data/calendar_scheduling_langsmith_ready.jsonl"
+    EXAMPLES = []
+    with open(dataset_path, "r") as f:
+        for i, line in enumerate(f):
+            if i >= 3:
+                break
+            item = json.loads(line)
+            EXAMPLES.append({
+                "task": item["inputs"]["prompt"],
+                "golden_plan": item["outputs"]["golden_plan"],
+            })
 
-    run_benchmark(args.backend, args.model_path)
-    wandb.finish()
-
-
-# import os
-# import subprocess
-# from typing import List, Tuple, TypedDict
-# from transformers import AutoTokenizer
-# from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate, AIMessagePromptTemplate
-# from langchain.chains import LLMChain
-# from langchain.llms.base import LLM
-# from langgraph.graph import StateGraph, END
-#
-# os.environ["TOKENIZERS_PARALLELISM"] = "false"
-#
-# # Path to llama.cpp binary
-# main_path = "/Users/michaelsigamani/Documents/DevelopmentCode/2025/agentic-planner-8b/llama.cpp/build/bin/llama-run"
-#
-# # --- Custom llama.cpp wrapper ---
-# class LlamaCppLLM(LLM):
-#     model_path: str
-#     n_predict: int = 256
-#
-#     def _call(self, prompt: str, stop: List[str] = None) -> str:
-#         try:
-#             result = subprocess.run(
-#                 [main_path, "-m", self.model_path, "-p", prompt, "-n", str(self.n_predict)],
-#                 stdout=subprocess.PIPE,
-#                 stderr=subprocess.PIPE,
-#                 text=True,
-#                 check=True
-#             )
-#             return result.stdout
-#         except subprocess.CalledProcessError as e:
-#             return f"Error running llama.cpp: {e.stderr}"
-#
-#     @property
-#     def _llm_type(self) -> str:
-#         return "llama.cpp"
-#
-# # --- Token-aware prompt constructor ---
-# def build_token_trimmed_chain(model_path: str,
-#                               history: List[Tuple[str, str]],
-#                               user_input: str,
-#                               system_prompt: str = "You are a helpful assistant for scheduling travel and meetings.",
-#                               max_context_tokens: int = 2048,
-#                               output_tokens: int = 256,
-#                               tokenizer_name: str = "mistralai/Mistral-7B-Instruct-v0.2"):
-#     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
-#
-#     def token_count(text): return len(tokenizer.encode(text))
-#
-#     messages = [SystemMessagePromptTemplate.from_template(system_prompt)]
-#     current_input_msg = HumanMessagePromptTemplate.from_template(user_input)
-#     total_tokens = token_count(system_prompt) + token_count(user_input)
-#     trimmed_history = []
-#
-#     for user, assistant in reversed(history):
-#         user_tokens = token_count(user)
-#         assistant_tokens = token_count(assistant)
-#         if total_tokens + user_tokens + assistant_tokens + output_tokens > max_context_tokens:
-#             break
-#         trimmed_history.insert(0, (user, assistant))
-#         total_tokens += user_tokens + assistant_tokens
-#
-#     for u, a in trimmed_history:
-#         messages.append(HumanMessagePromptTemplate.from_template(u))
-#         messages.append(AIMessagePromptTemplate.from_template(a))
-#
-#     messages.append(current_input_msg)
-#     chat_prompt = ChatPromptTemplate.from_messages(messages)
-#     llama_llm = LlamaCppLLM(model_path=model_path, n_predict=output_tokens)
-#     chain = chat_prompt | llama_llm
-#     return chain.invoke({})
-#
-# # --- LangGraph Planner State ---
-# class PlannerState(TypedDict, total=False):
-#     task: str
-#     history: List[Tuple[str, str]]
-#     plan: str
-#     run_id: str
-#     validation_passed: bool
-#
-# # --- LangGraph Node: Planner ---
-# def mistral_planner_node(state: PlannerState) -> PlannerState:
-#     task = state["task"]
-#     history = state.get("history", [])
-#     model_path = "models/7B/mistral-7b-instruct-v0.2.Q5_K_M.gguf"
-#
-#     plan = build_token_trimmed_chain(
-#         model_path=model_path,
-#         history=history,
-#         user_input=task,
-#         tokenizer_name="mistralai/Mistral-7B-Instruct-v0.2"
-#     )
-#
-#     return {
-#         **state,
-#         "plan": plan.strip(),
-#         "run_id": "local-test"
-#     }
-#
-# # --- Build LangGraph ---
-# builder = StateGraph(PlannerState)
-# builder.add_node("planner", mistral_planner_node)
-# builder.set_entry_point("planner")
-# builder.set_finish_point("planner")
-# graph = builder.compile()
-#
-# # --- Run Example ---
-# if __name__ == "__main__":
-#     state = {
-#         "task": "Plan a 3-day offsite in Edinburgh under £1000",
-#         "history": [
-#             ("Plan a weekend in Paris", "Visit the Louvre and Eiffel Tower."),
-#             ("Plan Tokyo for cherry blossoms", "Stay in Ueno Park and go early April.")
-#         ]
-#     }
-#
-#     result = graph.invoke(state)
-#     print("📍 Final Plan:\n", result["plan"])
+    total, correct = 0, 0
+    for example in EXAMPLES:
+        example["system_metrics"] = get_system_metrics()
+        final = compiled_graph.invoke(example)
+        if "judgement" in final and final["judgement"]["score"] == 1:
+            correct += 1
+        total += 1
+    print(f"\n📊 Final Accuracy: {correct}/{total} = {(correct/total)*100:.2f}%")
