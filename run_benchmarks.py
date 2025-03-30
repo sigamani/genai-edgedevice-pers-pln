@@ -1,8 +1,7 @@
-# langgraph_planner_pipeline.py — Generic Agentic Planning Workflow with State Tracking and Edge Metadata Logging
+# langgraph_planner_pipeline.py — Generic Agentic Planning Workflow with Feedback Logging
 
 import os
 import json
-import re
 import platform
 import psutil
 from typing import List, Tuple, TypedDict
@@ -10,6 +9,7 @@ from langchain_community.llms import LlamaCpp
 from langchain_core.prompts import PromptTemplate
 from langsmith.client import Client
 from langgraph.graph import StateGraph, END
+from langsmith import tracing_v2_enabled
 
 # --- LangSmith Tracing Configuration ---
 os.environ["LANGSMITH_TRACING"] = "true"
@@ -32,6 +32,7 @@ class PlannerState(TypedDict, total=False):
     reasoning: str
     judgement: dict
     system_metrics: dict
+    __run: object  # to hold LangSmith run object
 
 # --- LLM Wrapper With Edge Metadata ---
 base_llm = LlamaCpp(
@@ -78,36 +79,13 @@ Plan:
 """)
 
 judger_prompt = PromptTemplate.from_template("""
-You are an expert evaluator for calendar scheduling tasks.
+Compare the model's proposed plan to the expected plan. Do they match exactly?
 
-Your job is to compare a model-generated meeting plan (called the *prediction*) with a reference plan (called the *golden plan*). Both plans must specify a meeting time in the format:
+Task: {task}
+Prediction: {prediction}
+Golden Plan: {golden_plan}
 
-    "<Day>, <HH:MM> - <HH:MM>"
-
-Return only JSON in this format:
-{{
-  "score": 1 or 0,
-  "reason": "short natural language explanation"
-}}
-
----
-
-TASK: {task}
-
-PREDICTION: {prediction}
-GOLDEN: {golden_plan}
-
-Compare both plans.
-
-If:
-- Day matches (case-insensitive)
-- Start and end times match exactly
-
-→ score = 1
-
-Else → score = 0
-
-Return only JSON as shown.
+Return JSON: {{"score": 1 or 0, "reason": explanation}}
 """)
 
 # --- System Info Helper ---
@@ -135,32 +113,8 @@ def judge_node(state: PlannerState) -> PlannerState:
     golden = state.get("golden_plan")
     if not golden:
         return state
-
-    judge_input = {
-        "task": state["task"],
-        "prediction": prediction,
-        "golden_plan": golden
-    }
-    judgement_raw = (judger_prompt | llm).invoke(judge_input)
-
-    # 🔧 Extract first JSON object from messy LLM output
-    match = re.search(r'\{.*?\}', judgement_raw, re.DOTALL)
-    if match:
-        try:
-            judgement = json.loads(match.group(0))
-        except json.JSONDecodeError as e:
-            judgement = {
-                "score": 0,
-                "reason": f"Failed to parse JSON: {e}",
-                "raw": judgement_raw
-            }
-    else:
-        judgement = {
-            "score": 0,
-            "reason": "No JSON object found in LLM output.",
-            "raw": judgement_raw
-        }
-
+    judge_input = {"task": state["task"], "prediction": prediction, "golden_plan": golden}
+    judgement = (judger_prompt | llm).invoke(judge_input)
     state["judgement"] = judgement
     return state
 
@@ -180,6 +134,18 @@ def log_feedback(state: PlannerState) -> PlannerState:
     if "completed_subtasks" in state:
         print("🧠 Subtasks Completed:", state["completed_subtasks"])
     print("📟 System:", state.get("system_metrics"))
+
+    run = state.get("__run")
+    if run and "judgement" in state:
+        try:
+            Client().create_feedback(
+                run_id=run.id,
+                key="calendar_plan_match",
+                score=state["judgement"].get("score"),
+                comment=state["judgement"].get("reason")
+            )
+        except Exception as e:
+            print("⚠️ Skipping feedback:", e)
     return state
 
 # --- LangGraph Construction ---
@@ -216,8 +182,12 @@ if __name__ == "__main__":
     total, correct = 0, 0
     for example in EXAMPLES:
         example["system_metrics"] = get_system_metrics()
-        final = compiled_graph.invoke(example)
-        if "judgement" in final and final["judgement"]["score"] == 1:
-            correct += 1
-        total += 1
+        with tracing_v2_enabled(project_name="calendar-planner", tags=["benchmark", "edge"]):
+            final = compiled_graph.invoke(example)
+            run = tracer.run_tree
+            example["__run"] = run
+            final = compiled_graph.invoke(example)
+            if "judgement" in final and final["judgement"]["score"] == 1:
+                correct += 1
+            total += 1
     print(f"\n📊 Final Accuracy: {correct}/{total} = {(correct/total)*100:.2f}%")
