@@ -20,7 +20,7 @@ class ToolCallingState(TypedDict, total=False):
 # --- Tool: Budget and weather validation ---
 @ls_traceable(name="ValidatorTool")
 def check_budget_and_weather(state: ToolCallingState, **kwargs) -> ToolCallingState:
-    attempts = state.get("attempts", 0) + 1
+    attempts = (state.get("attempts") or 0) + 1
     plan = state.get("plan", "")
     passed = "budget" in plan.lower() and "weather" in plan.lower()
     return {
@@ -33,7 +33,7 @@ def check_budget_and_weather(state: ToolCallingState, **kwargs) -> ToolCallingSt
 # --- Planner Node using model runner ---
 @ls_traceable(name="PlannerNode")
 def planner_node(state: ToolCallingState, **kwargs) -> ToolCallingState:
-    attempts = state.get("attempts", 0) + 1
+    attempts = (state.get("attempts") or 0) + 1
     prompt = (
         f"Plan a {state['task']} with these constraints: {state['constraints']}.\n"
         "Make sure to include the word 'budget' and mention the 'weather' to help with validation."
