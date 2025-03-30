@@ -12,7 +12,6 @@ llama_cpp_python==0.3.8        # llama.cpp integration via langchain-community
 huggingface-hub==0.29.3        # Local + remote model access
 
 # Typing + pydantic ecosystem
-typing==3.10.0.0               # For legacy compatibility; safe to remove in Python ≥3.10
 typing_extensions==4.12.2      # Extra typing features
 annotated-types==0.7.0         # Supports pydantic v2+
 pydantic==2.10.6               # LangChain and FastAPI validation
