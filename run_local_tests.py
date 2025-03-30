@@ -26,6 +26,7 @@ DATASET_PATH = "data/calendar_scheduling_langsmith_ready.jsonl"
 # --- LangSmith Setup ---
 client = Client()
 
+
 # --- LangGraph State ---
 class PlannerState(TypedDict, total=False):
     task: str
@@ -35,6 +36,7 @@ class PlannerState(TypedDict, total=False):
     golden_plan: str
     reasoning: str
     valid_slots: List[str]
+
 
 # --- LLM Setup ---
 llm = LlamaCpp(
@@ -49,15 +51,18 @@ llm = LlamaCpp(
 )
 
 # --- Prompts ---
-planner_prompt = PromptTemplate.from_template("""
+planner_prompt = PromptTemplate.from_template(
+    """
 You are an expert at scheduling meetings. Given constraints on participant availability, propose a valid meeting time.
 Use this format: Here is the proposed time: <Day>, <HH:MM> - <HH:MM>
 
 TASK: {task}
 SOLUTION:
-""")
+"""
+)
 
-reasoning_prompt = PromptTemplate.from_template("""
+reasoning_prompt = PromptTemplate.from_template(
+    """
 You proposed this meeting time: "{previous_answer}"
 
 However, it may conflict with one or more participants' schedules or preferences.
@@ -72,20 +77,28 @@ Please choose the earliest available slot from the list and propose a new meetin
 "Here is the proposed time: <Day>, <HH:MM> - <HH:MM>"
 
 Explain your reasoning before the final answer.
-""")
+"""
+)
+
 
 # --- Utilities ---
 def extract_meeting_time(text: str) -> str | None:
     match = re.search(r"Here is the proposed time: (.*)", text)
     return match.group(1).strip() if match else None
 
+
 def parse_blocked_times(constraints: str) -> list[tuple[datetime, datetime]]:
     pattern = r"(\d{1,2}:\d{2})\s*to\s*(\d{1,2}:\d{2})"
     matches = re.findall(pattern, constraints)
-    return [(datetime.strptime(s, "%H:%M"), datetime.strptime(e, "%H:%M")) for s, e in matches]
+    return [
+        (datetime.strptime(s, "%H:%M"), datetime.strptime(e, "%H:%M"))
+        for s, e in matches
+    ]
+
 
 def get_valid_half_hour_slots(start="09:00", end="17:00", blocked=None):
-    if blocked is None: blocked = []
+    if blocked is None:
+        blocked = []
     cur = datetime.strptime(start, "%H:%M")
     end = datetime.strptime(end, "%H:%M") - timedelta(minutes=30)
     slots = []
@@ -96,10 +109,12 @@ def get_valid_half_hour_slots(start="09:00", end="17:00", blocked=None):
         cur += timedelta(minutes=30)
     return slots
 
+
 # --- LangGraph Nodes ---
 def planner_node(state: PlannerState) -> PlannerState:
     result = (planner_prompt | llm).invoke({"task": state["task"]})
     return {**state, "plan": result.strip()}
+
 
 def reasoner_node(state: PlannerState) -> PlannerState:
     proposed = extract_meeting_time(state["plan"])
@@ -108,15 +123,18 @@ def reasoner_node(state: PlannerState) -> PlannerState:
     valid_str = "\n".join(f"- {s}" for s in valid)
 
     if proposed not in valid:
-        result = (reasoning_prompt | llm).invoke({
-            "previous_answer": proposed,
-            "constraints": state["task"],
-            "valid_slots": valid_str
-        })
+        result = (reasoning_prompt | llm).invoke(
+            {
+                "previous_answer": proposed,
+                "constraints": state["task"],
+                "valid_slots": valid_str,
+            }
+        )
         state["plan"] = result.strip()
         state["reasoning"] = result
         state["valid_slots"] = valid
     return state
+
 
 def log_feedback(state: PlannerState) -> PlannerState:
     plan = extract_meeting_time(state["plan"])
@@ -125,9 +143,10 @@ def log_feedback(state: PlannerState) -> PlannerState:
         run_id=state.get("run_id", ""),
         key="match_to_golden_plan",
         score=1 if match else 0,
-        comment=f"Match to golden plan: {match}"
+        comment=f"Match to golden plan: {match}",
     )
     return state
+
 
 # --- LangGraph Build ---
 graph = StateGraph(PlannerState)

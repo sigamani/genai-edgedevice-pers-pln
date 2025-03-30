@@ -170,6 +170,8 @@ cython_debug/
 # Ruff stuff:
 .ruff_cache/
 
+llama.cpp/AUTHORS
+
 # PyPI configuration file
 .pypirc
 /benchmarks/natural-plan/
