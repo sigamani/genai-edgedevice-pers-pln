@@ -21,6 +21,11 @@ def llama_cpp_runner(prompt: str, model_path="models/llama-7b.gguf") -> str:
         return "[ERROR: llama.cpp failed]"
 
 def mlc_llm_runner(prompt: str) -> str:
+    from mlc_llm import ChatModule
+    chat = ChatModule(
+               model="Llama-3-8B-Instruct-q4f16_1",
+                model_path="dist"  # or your actual mode
+                )
     return f"[mlc-llm simulated response for prompt: {prompt}]"
 
 def planner_model_runner(prompt: str, backend="openai") -> str:
