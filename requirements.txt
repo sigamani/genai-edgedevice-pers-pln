@@ -1,34 +1,100 @@
 # Core LangChain ecosystem
-langchain==0.1.17
-langgraph==0.3.20
-langsmith==0.3.19
-langchain-openai==0.1.6  # Compatible with openai 1.68.2
-openai==1.68.2
+langchain==0.1.17              # Stable LLM orchestration
+langchain-core==0.1.53         # Matched with langchain 0.1.17
+langchain-community==0.0.38    # Required for community LLM wrappers (e.g. LlamaCpp)
+langgraph==0.0.40              # Graph orchestrator (compatible with langchain-core 0.1.53)
+langsmith==0.1.147             # LangChain observability and tracing
+langchain-openai==0.1.6        # Compatible with openai 1.68.2
+openai==1.68.2                 # Latest supported by langchain-openai 0.1.6
 
-# Hugging Face + model integration
-huggingface-hub==0.29.3
+# LLM backends + integration
+llama_cpp_python==0.3.8        # llama.cpp integration via langchain-community
+huggingface-hub==0.29.3        # Local + remote model access
 
-# System and typing
-cffi==1.17.1
-typing==3.10.0.0  # Only needed for older Python; can omit if using 3.10+
-typing_extensions==4.12.2
+# Typing + pydantic ecosystem
+typing==3.10.0.0               # For legacy compatibility; safe to remove in Python ≥3.10
+typing_extensions==4.12.2      # Extra typing features
+annotated-types==0.7.0         # Supports pydantic v2+
+pydantic==2.10.6               # LangChain and FastAPI validation
 
-# Scientific + progress
-numpy==1.26.4  # numpy 2.2.4 doesn't exist yet; this is latest stable
-tqdm==4.67.1
+# YAML + JSON + serialization
+PyYAML==6.0.2                  # YAML parsing
+jsonpatch==1.33                # JSON diff support
+jsonpointer==3.0.0             # JSON reference support
+dataclasses-json==0.6.7        # For serialising dataclasses
+marshmallow==3.26.1            # Alternative serialisation lib
 
-# YAML support
-PyYAML==6.0.2  # Use this instead of lowercase `yaml==0.2.5`
+# System + scientific
+numpy==1.26.4                  # Latest stable version
+psutil==5.9.8                  # For memory + CPU monitoring (note: 7.0.0 does not exist)
+cffi==1.17.1                   # For llama.cpp and low-level bindings
 
-# CLI + HTTP
-typer==0.15.2
-requests==2.32.3
+# HTTP + API
+requests==2.32.3               # Standard HTTP client
+aiohttp==3.11.14               # Async HTTP client
+httpx==0.28.1                  # Modern async HTTP library
+httpx-sse==0.4.0               # SSE events for streaming APIs
+python-dotenv==1.1.0           # Loads env vars from .env
+fastapi==0.115.12              # API server framework
+starlette==0.46.1              # FastAPI dependency
+uvicorn==0.34.0                # ASGI server
+python-multipart==0.0.20       # For file uploads
 
-# Git + serialisation
-gitpython==3.1.44
-pydantic==2.10.6
-annotated-types==0.7.0
+# CLI + tooling
+typer==0.15.2                  # CLI utilities
+black==25.1.0                  # Code formatter
+pre-commit==4.2.0              # Git hook automation
+virtualenv==20.29.3            # Environment creation
+gitpython==3.1.44              # Git automation
 
-# Experiment tracking + system stats
-wandb==0.19.8
-psutil==5.9.8  # psutil 7.0.0 does not exist yet
+# Streaming + IO
+tqdm==4.67.1                   # Progress bars
+fsspec==2024.12.0              # Filesystem abstraction
+PySocks==1.7.1                 # Proxy support
+aiohappyeyeballs==2.6.1        # DNS resolution
+
+# GraphQL + tracing
+gql==3.5.2                     # LangSmith queries
+graphql-core==3.2.4            # Dependency for gql
+sentry-sdk==2.24.1             # Error logging
+
+# Tokenisation + LLM utils
+tiktoken==0.9.0                # OpenAI tokenizer
+tokenizers==0.21.1             # Transformers backend
+transformers==4.50.0           # HF model loading
+safetensors==0.5.3             # Secure tensor serialization
+
+# Rich UI
+rich==13.9.4                   # Terminal formatting
+rich-toolkit==0.11.3           # Rich extensions
+markdown-it-py==3.0.0
+mdurl==0.1.2
+Pygments==2.19.1
+
+# Eval + Tracking
+wandb==0.19.8                  # Experiment tracking
+weave==0.51.39                 # LangChain telemetry
+diskcache==5.6.3               # Used by weave
+
+# Concurrency + async
+anyio==4.4.0
+sniffio==1.3.1
+async-timeout==4.0.3
+
+# Build + env helpers
+setuptools==75.8.2
+wheel==0.45.1
+pip==25.0.1
+filelock==3.18.0
+platformdirs==4.3.7
+nodeenv==1.9.1
+appdirs==1.4.4
+shellingham==1.5.4
+backoff==2.2.1
+
+# Parsers + utils
+regex==2024.11.6
+emoji==2.14.1
+email-validator==2.2.0
+python-dateutil==2.9.0.post0
+tzdata==2025.2
