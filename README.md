@@ -1,10 +1,3 @@
-<!-- PROJECT SHIELD -->
-![GitHub repo size](https://img.shields.io/github/repo-size/your-username/ai-planner-on-edge)
-![GitHub language count](https://img.shields.io/github/languages/count/your-username/ai-planner-on-edge)
-![GitHub contributors](https://img.shields.io/github/contributors/your-username/ai-planner-on-edge)
-![GitHub forks](https://img.shields.io/github/forks/your-username/ai-planner-on-edge?style=social)
-![GitHub stars](https://img.shields.io/github/stars/your-username/ai-planner-on-edge?style=social)
-
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
@@ -56,7 +49,7 @@ pip install -r requirements.txt
 ### Run Planner with Mocked LLM
 
 ```bash
-python run_planner.py
+python run_planner.py --task "I’d like to visit Japan in May 2025 to see the cherry blossoms, with a total budget of $2,000. Can you help me plan the trip, including recommended destinations, travel tips, and an itinerary within budget?" --backend openai
 ```
 
 ### Run Benchmarks
