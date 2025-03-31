@@ -1,7 +1,7 @@
 # Edge-Deployable AI Planner
 
 **Constraint-aware AI planner using a quantised 8B LLM.**  
-Built for CPU and mobile devices using `llama.cpp` and `mlc-llm`.
+Built for CPU and mobile devices using `llama.cpp`.
 
 ---
 
@@ -9,26 +9,24 @@ Built for CPU and mobile devices using `llama.cpp` and `mlc-llm`.
 
 This project showcases an **edge-compatible AI planning system** capable of handling structured tasks like:
 
-- 🧳 Trip planning (e.g., multi-city itineraries with budget/time limits)
-- 📅 Meeting scheduling
-- 🌦️ Constraint management (e.g., budget, time, weather)
+- Trip planning (e.g., multi-city itineraries with budget/time limits)
+- Meeting scheduling
+- Constraint management (e.g., budget, time, weather)
 
 ### Key Features
-- 🧠 Lightweight Mistral 7B (int4 quantised)
-- ⚙️ Optimised for `llama.cpp` (CPU) and `mlc-llm` (mobile)
-- 🔁 Agentic planning loop with constraint validation
-- 📈 Built-in benchmarking and evaluation with LangSmith and W&B
-- 🔬 Gemini-style planner agent, without the infra tax
+- Lightweight Mistral 7B (int4 quantised)
+- Optimised for `llama.cpp` (CPU) and `mlc-llm` (mobile)
+- Agentic planning loop with constraint validation
+- Built-in benchmarking and evaluation with LangSmith and W&B
 
 ---
 
 ##  Getting Started
 
-### ✅ Prerequisites
+### Prerequisites
 - Python 3.10+
 - `cmake`, `g++`, `wget` (to build `llama.cpp`)
 - Docker (optional)
-- GPU (optional for fine-tuning)
 
 ### Installation
 
@@ -50,14 +48,14 @@ python run_benchmarks.py --backend ollama
 ```
 
 🧠 Results are logged to:
-- ✅ [LangSmith](https://smith.langchain.com/public/21b06a5d-4661-4594-874b-86cf733c142b/r)
-- ✅ [Weights & Biases](https://wandb.ai/michael-sigamani-oxalatech/agentic-planner-8b)
+- [LangSmith](https://smith.langchain.com/public/21b06a5d-4661-4594-874b-86cf733c142b/r)
+- [Weights & Biases](https://wandb.ai/michael-sigamani-oxalatech/agentic-planner-8b)
 
 ---
 
 ## How to Use
 
-### 🧪 Run the Planner (OpenAI Backend)
+### Run the Planner (OpenAI Backend)
 
 ```bash
 python run_planner.py --task "Plan a budget Europe trip in July" --backend openai
@@ -77,17 +75,14 @@ cmake --build build
 ## Continuous Integration
 
 CI via GitHub Actions:
-- ✅ Multi-platform (Ubuntu, macOS, Windows)
-- ✅ LLM inference tests (`llama.cpp`)
-- ✅ Planning loop and constraint coverage
+- Multi-platform (Ubuntu, macOS, Windows)
+- LLM inference tests (`llama.cpp`)
+- Planning loop and constraint coverage
 
 ---
 
 ## Edge Compatibility
 
 Deploy this agent to:
-- 💻 Laptops (CPU-only)
-- 🍓 Raspberry Pi / Jetson Nano
-- 📱 Mobile via `mlc-llm`
-
-All with fast inference and no GPU required.
+- Laptops (CPU-only)
+- Raspberry Pi / Jetson Nano
