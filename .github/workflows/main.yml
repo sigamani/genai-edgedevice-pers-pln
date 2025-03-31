@@ -2,9 +2,9 @@ name: CI - Agentic Planner
 
 on:
   push:
-    branches: [main]
+    branches: [post-submission-work]
   pull_request:
-    branches: [main]
+    branches: [post-submission-work]
 
 jobs:
   build-and-test:
