@@ -1,43 +1,39 @@
-name: Lint and Test Python
+name: Planner CI
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: [push, pull_request]
 
 jobs:
-  lint-test:
+  test:
     runs-on: ubuntu-latest
 
-    env:
-      LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
-      HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: "3.10"
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install black flake8
+        pip install black flake8 pytest
 
-    - name: Lint with flake8
-      run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    - name: Run linter
+      run: flake8 planner tests
 
-    - name: Format check with black
+    - name: Check formatting
+      run: black --check planner tests
+
+    - name: Run unit tests
+      run: pytest
+
+    - name: Run LangGraph benchmark (limited)
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
-        black . 
-      
-    - name: Run LangGraph planner
-      run: |
-        python run_planner.py --task "Plan a trip to Rome and Florence" --backend mlc-llm
+        echo "Limiting to 3 examples for CI"
+        sed -n '1,3p' calendar_scheduling.jsonl > mini_calendar.jsonl
+        cp mini_calendar.jsonl calendar_scheduling.jsonl
+        python run_cal_benchmarks.py
