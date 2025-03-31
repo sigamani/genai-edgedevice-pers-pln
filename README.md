@@ -1,3 +1,15 @@
 # Edge-Deployable AI Planner
 
-** This branch provides a separate environment to address issues in the main branch, including fixing the broken CI/CD pipeline, adding unit tests, refactoring the codebase for modularity, building Docker containers, integrating MLC-LLM deployment, extending benchmarking coverage, and improving the agentic flow by introducing a routing step after the input prompt. **  
+**📌 Note: Purpose of This Branch**
+
+This branch serves as a separate environment to address and improve several areas of the main branch, including:
+
+- Fixing the broken CI/CD pipeline  
+- Adding unit tests for core functionality  
+- Refactoring the codebase for improved modularity  
+- Building and containerising the application with Docker  
+- Integrating deployment via MLC-LLM  
+- Extending and automating benchmarking processes  
+- Enhancing the agentic workflow by adding a routing step post-input prompt  
+
+These changes aim to create a cleaner, more maintainable, and production-ready codebase.
