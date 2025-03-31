@@ -31,4 +31,4 @@ RUN mkdir -p /app/models && \
     -o /app/models/${MODEL_FILE}
 
 # Expose the planner runner as default
-ENTRYPOINT ["python", "run_graph_planner.py"]
+ENTRYPOINT ["python", "run_cal_benchmarks.py"]
