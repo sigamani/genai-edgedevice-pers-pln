@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Clone your repo directly
-RUN git clone https://github.com/sigamani/agentic-planner-8b.git . --depth=1
+# Clone repo directly
+RUN git clone https://<USERNAME>:<TOKEN>@github.com/sigamani/agentic-planner-8b.git . --depth=1
 
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -23,7 +23,7 @@ RUN git clone https://github.com/ggerganov/llama.cpp.git && \
 # Download quantised Mistral GGUF model (e.g., from TheBloke)
 ARG HF_API_KEY
 ARG MODEL_NAME=TheBloke/Mistral-7B-Instruct-v0.2-GGUF
-ARG MODEL_FILE=mistral-7b-instruct-v0.2.Q4_K_M.gguf
+ARG MODEL_FILE=mistral-7b-instruct-v0.2.Q3_K_M.gguf
 
 RUN mkdir -p /app/models && \
     curl -L -H "Authorization: Bearer ${HF_API_KEY}" \
@@ -31,4 +31,4 @@ RUN mkdir -p /app/models && \
     -o /app/models/${MODEL_FILE}
 
 # Expose the planner runner as default
-ENTRYPOINT ["python", "run_graph_planner.py"]
+ENTRYPOINT ["python", "run_cal_benchmarks.py"]
