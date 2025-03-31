@@ -15,7 +15,7 @@ This project showcases an **edge-compatible AI planning system** capable of hand
 
 ### Key Features
 - Lightweight Mistral 7B (int4 quantised)
-- Optimised for `llama.cpp` (CPU) and `mlc-llm` (mobile)
+- Optimised for `llama.cpp` (CPU)
 - Agentic planning loop with constraint validation
 - Built-in benchmarking and evaluation with LangSmith and W&B
 
@@ -44,7 +44,7 @@ We benchmark on structured planning tasks using data inspired by [arXiv:2406.045
 
 Run the benchmark suite:
 ```bash
-python run_benchmarks.py --backend ollama
+python run_benchmarks.py --backend llama.cpp
 ```
 
 Results are logged to:
