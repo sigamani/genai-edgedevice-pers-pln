@@ -5,6 +5,8 @@ from langsmith import traceable as ls_traceable
 from langsmith.run_helpers import trace
 import wandb
 
+wandb.login(key=os.getenv("WANDB_API_KEY"))
+
 BENCHMARKS_DIR = os.path.join(os.path.dirname(__file__), "benchmarks")
 JSONL_FILES = [
     "calendar_scheduling.jsonl",
