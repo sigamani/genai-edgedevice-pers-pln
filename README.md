@@ -1,8 +1,8 @@
 # Edge-Deployable AI Planner
 
-**📌 Note: Purpose of This Branch**
+**📌 Purpose of This Branch**
 
-This branch serves as a separate environment to address and improve several areas of the main branch, including:
+This branch serves as a separate environment to add in core funtionality missing in main (post project submission):
 
 - Fixing the broken CI/CD pipeline  
 - Adding unit tests for core functionality  
