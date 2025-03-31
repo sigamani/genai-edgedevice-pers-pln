@@ -1,56 +1,23 @@
-name: Deploy METAL backend with local llama.cpp running Mistral
+FROM python:3.10-slim
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:  
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    wget \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
 
-env:
-  IMAGE_NAME: michaelsigamani/naturalplan-benchmark
-  IMAGE_TAG: latest
-  HF_API_KEY: ${{ secrets.HF_API_KEY }}
-  MODEL_NAME: "bartowski/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf" 
-  EMBEDDING_MODEL: "nomic-ai/nomic-embed-text-v1.5-GGUF"
-  
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+WORKDIR /app
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+# Clone your repo directly
+RUN git clone https://github.com/sigamani/agentic-planner-8b.git . --depth=1
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+RUN pip install --no-cache-dir -r requirements.txt
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+# Build llama.cpp (optional)
+RUN git clone https://github.com/ggerganov/llama.cpp.git && \
+    cd llama.cpp && \
+    make LLAMA_OPENBLAS=1
 
-    - name: Install Dependencies
-      run: |
-        pip install --no-cache-dir --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Pre-download Toy Model (For Testing )
-      run: |
-        mkdir -p $HOME/models/huggingface
-        HF_HOME=$HOME/models/huggingface python3 -c \
-          "from transformers import AutoModel; AutoModel.from_pretrained('distilbert-base-uncased', cache_dir='$HOME/models/huggingface')"
- 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-             
-    - name: Build and push Docker image
-      run: |
-        docker buildx build --push \
-                            --build-arg HF_API_KEY=${{ secrets.HF_API_KEY }} \
-                            --build-arg MODEL_NAME="NousResearch/Meta-Llama-3-8B-Instruct" \
-                            --build-arg EMBEDDING_MODEL="nomic-ai/nomic-embed-text-v1.5-GGUF" \
-                            -t $IMAGE_NAME:$IMAGE_TAG \
-                            .
+ENTRYPOINT ["python", "run_graph_planner.py"]
