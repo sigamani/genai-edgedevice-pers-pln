@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-
+        
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -17,6 +17,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+        pip install --no-cache-dir --upgrade pip
         pip install -r requirements.txt
         pip install black flake8 pytest
 
@@ -29,11 +30,28 @@ jobs:
     - name: Run unit tests
       run: pytest
 
-    - name: Run LangGraph benchmark (limited)
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    - env:
+        IMAGE_NAME: michaelsigamani/naturalplan-benchmark
+        IMAGE_TAG: latest
+        HF_API_KEY: ${{ secrets.HF_API_KEY }}
+        MODEL_NAME: "TheBloke/Mistral-7B-Instruct-v0.2-GGUF" 
+      
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+             
+    - name: Build and push Docker image
       run: |
-        echo "Limiting to 3 examples for CI"
-        sed -n '1,3p' calendar_scheduling.jsonl > mini_calendar.jsonl
-        cp mini_calendar.jsonl calendar_scheduling.jsonl
-        python run_cal_benchmarks.py
+        docker buildx build --push \
+                            --build-arg HF_API_KEY=${{ secrets.HF_API_KEY }} \
+                            --build-arg MODEL_NAME="NousResearch/Meta-Llama-3-8B-Instruct" \
+                            --build-arg EMBEDDING_MODEL="nomic-ai/nomic-embed-text-v1.5-GGUF" \
+                            -t $IMAGE_NAME:$IMAGE_TAG \
+                            .
+
