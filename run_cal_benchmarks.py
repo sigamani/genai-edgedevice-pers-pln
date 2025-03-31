@@ -208,7 +208,7 @@ def judge_node(state: PlannerState) -> PlannerState:
     }
     judgement_raw = (judger_prompt | llm).invoke(judge_input)
 
-    # 🔧 Extract first JSON object from messy LLM output
+    # Extract first JSON object from messy LLM output
     match = re.search(r"\{.*?\}", judgement_raw, re.DOTALL)
     if match:
         try:
@@ -243,10 +243,10 @@ def state_tracker(state: PlannerState) -> PlannerState:
 def log_feedback(state: PlannerState) -> PlannerState:
     print("\n--- PLAN ---\n", state.get("plan"))
     if "judgement" in state:
-        print("✅ Evaluation:", state["judgement"])
+        print("Evaluation:", state["judgement"])
     if "completed_subtasks" in state:
         print("🧠 Subtasks Completed:", state["completed_subtasks"])
-    print("📟 System:", state.get("system_metrics"))
+    print("System:", state.get("system_metrics"))
     return state
 
 
@@ -311,7 +311,7 @@ if __name__ == "__main__":
         if "judgement" in final and final["judgement"]["score"] == 1:
             correct += 1
         total += 1
-    print(f"\n📊 Final Accuracy: {correct}/{total} = {(correct/total)*100:.2f}%")
+    print(f"\n Final Accuracy: {correct}/{total} = {(correct/total)*100:.2f}%")
     wandb.log({"final_accuracy": correct / total})
     wandb.finish()
 
