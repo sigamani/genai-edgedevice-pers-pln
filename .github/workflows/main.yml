@@ -53,9 +53,6 @@ jobs:
     - name: Build and push Docker image
       run: |
         docker buildx build --push \
-                            --build-arg HF_API_KEY=${{ secrets.HF_API_KEY }} \
-                            --build-arg MODEL_NAME="NousResearch/Meta-Llama-3-8B-Instruct" \
-                            --build-arg EMBEDDING_MODEL="nomic-ai/nomic-embed-text-v1.5-GGUF" \
                             -t $IMAGE_NAME:$IMAGE_TAG \
                             .
 
