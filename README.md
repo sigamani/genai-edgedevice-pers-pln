@@ -1,42 +1,34 @@
-<!-- PROJECT LOGO -->
-<br />
-<p align="center">
-  <h3 align="center">Edge-Deployable AI Planner</h3>
-  <p align="center">
-    Constraint-aware AI planner using a quantised 8B LLM. Built for CPU and mobile devices with llama.cpp and mlc-llm.
-    <br />
-    <a href="https://github.com/your-username/ai-planner-on-edge"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="#demo">View Demo</a>
-    ·
-    <a href="https://github.com/your-username/ai-planner-on-edge/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/your-username/ai-planner-on-edge/issues">Request Feature</a>
-</p>
+# Edge-Deployable AI Planner
+
+**Constraint-aware AI planner using a quantised 8B LLM.**  
+Built for CPU and mobile devices using `llama.cpp` and `mlc-llm`.
 
 ---
 
-## 🧠 About The Project
+## Project Overview
 
-This project demonstrates an edge-compatible AI planner capable of handling structured tasks like travel and meeting planning, with budget, time, and weather constraints.
+This project showcases an **edge-compatible AI planning system** capable of handling structured tasks like:
 
-Built using:
-- A quantised Mistral 7B or LLaMA2-7B LLM (int4)
-- `llama.cpp` for CPU inference
-- `mlc-llm` for mobile/WebGPU deployment
-- Agentic planning logic with constraint validation
-- GitHub Actions CI across platforms
+- 🧳 Trip planning (e.g., multi-city itineraries with budget/time limits)
+- 📅 Meeting scheduling
+- 🌦️ Constraint management (e.g., budget, time, weather)
+
+### Key Features
+- 🧠 Lightweight Mistral 7B (int4 quantised)
+- ⚙️ Optimised for `llama.cpp` (CPU) and `mlc-llm` (mobile)
+- 🔁 Agentic planning loop with constraint validation
+- 📈 Built-in benchmarking and evaluation with LangSmith and W&B
+- 🔬 Gemini-style planner agent, without the infra tax
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
-### Prerequisites
+### ✅ Prerequisites
 - Python 3.10+
-- `cmake`, `g++`, `wget` (for building llama.cpp)
+- `cmake`, `g++`, `wget` (to build `llama.cpp`)
 - Docker (optional)
-- GPU (optional for training/fine-tuning)
+- GPU (optional for fine-tuning)
 
 ### Installation
 
@@ -46,51 +38,56 @@ cd agentic-planner-8b
 pip install -r requirements.txt
 ```
 
-### Run Planner with Mocked LLM
+---
 
+## Benchmarks & Evaluation
+
+We benchmark on structured planning tasks using data inspired by [arXiv:2406.04520](https://arxiv.org/pdf/2406.04520).
+
+Run the benchmark suite:
 ```bash
-python run_planner.py --task "I’d like to visit Japan in May 2025 to see the cherry blossoms, with a total budget of $2,000. Can you help me plan the trip, including recommended destinations, travel tips, and an itinerary within budget?" --backend openai
+python run_benchmarks.py --backend ollama
 ```
 
-### Run Benchmarks
+🧠 Results are logged to:
+- ✅ [LangSmith](https://smith.langchain.com/public/21b06a5d-4661-4594-874b-86cf733c142b/r)
+- ✅ [Weights & Biases](https://wandb.ai/michael-sigamani-oxalatech/agentic-planner-8b)
+
+---
+
+## How to Use
+
+### 🧪 Run the Planner (OpenAI Backend)
 
 ```bash
-python run_benchmarks.py
+python run_planner.py --task "Plan a budget Europe trip in July" --backend openai
 ```
 
-### Run with llama.cpp
+### Run the Planner (llama.cpp)
 
 ```bash
 cd llama.cpp
-make LLAMA_OPENBLAS=1
-./main -m ../models/llama-8b.gguf -p "Plan a trip to Europe for two weeks under $3000"
+cmake -B build
+cmake --build build
+./build/bin/llama-cli -m ./models/llama-8b.Q4_K_M.gguf -p "Plan a trip to Europe for two weeks under $3000"
 ```
 
 ---
 
-## 🧪 Benchmarks
+## Continuous Integration
 
-This planner is benchmarked using prompts adapted from [arXiv:2406.04520](https://arxiv.org/pdf/2406.04520). See `benchmarks/` for test cases and evaluation metrics.
-
----
-
-## 📦 CI/CD
-
-GitHub Actions runs tests on:
-- Ubuntu, macOS, Windows
-- llama.cpp inference validation
-- Planning logic and constraint satisfaction
+CI via GitHub Actions:
+- ✅ Multi-platform (Ubuntu, macOS, Windows)
+- ✅ LLM inference tests (`llama.cpp`)
+- ✅ Planning loop and constraint coverage
 
 ---
 
-## 📱 Edge Deployment
+## Edge Compatibility
 
-Models are deployable using:
-- `llama.cpp` on CPU-only systems (Raspberry Pi, laptops)
-- `mlc-llm` for GPU-accelerated inference on Android, iOS, and WebGPU
+Deploy this agent to:
+- 💻 Laptops (CPU-only)
+- 🍓 Raspberry Pi / Jetson Nano
+- 📱 Mobile via `mlc-llm`
 
----
-
-## 📄 License
-
-Distributed under the Apache 2.0 License.
+All with fast inference and no GPU required.
