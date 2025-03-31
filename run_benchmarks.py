@@ -8,8 +8,8 @@ import wandb
 BENCHMARKS_DIR = os.path.join(os.path.dirname(__file__), "benchmarks")
 JSONL_FILES = [
     "calendar_scheduling.jsonl",
-    "trip_planning.jsonl",
-    "meeting_planning.jsonl"
+ #   "trip_planning.jsonl",
+ #   "meeting_planning.jsonl"
     ]
 
 # Initialise Weights & Biases logging
@@ -22,7 +22,7 @@ def run_benchmark():
 
     for filename in JSONL_FILES:
         file_path = os.path.join(BENCHMARKS_DIR, filename)
-        print(f"🔍 Running benchmarks from {file_path}")
+        print(f"Running benchmarks from {file_path}")
 
         with open(file_path, "r") as f:
             for line in f:
@@ -63,7 +63,7 @@ def run_benchmark():
 
                     results.append(result_entry)
 
-    print(f"✅ Evaluated {len(results)} prompts across all benchmarks.")
+    print(f"Evaluated {len(results)} prompts across all benchmarks.")
 
 
 if __name__ == "__main__":
