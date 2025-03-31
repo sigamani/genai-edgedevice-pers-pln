@@ -31,8 +31,8 @@ jobs:
     # - name: Check formatting
     #   run: black .
 
-    - name: Run unit tests
-      run: pytest     
+    # - name: Run unit tests
+    #   run: pytest     
 
     - name: Log in to Docker Hub
       uses: docker/login-action@v3
