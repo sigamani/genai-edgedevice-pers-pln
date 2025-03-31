@@ -1,4 +1,4 @@
-name: CI - Agentic Planner
+name: Dev 
 
 on:
   push:
@@ -40,4 +40,4 @@ jobs:
 
       - name: 🚀 Run Benchmarks
         run: |
-          python run_benchmarks.py --backend llama.cpp
+          python run_cal_benchmarks.py
