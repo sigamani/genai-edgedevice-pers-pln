@@ -47,7 +47,7 @@ Run the benchmark suite:
 python run_benchmarks.py --backend ollama
 ```
 
-🧠 Results are logged to:
+Results are logged to:
 - [LangSmith](https://smith.langchain.com/public/21b06a5d-4661-4594-874b-86cf733c142b/r)
 - [Weights & Biases](https://wandb.ai/michael-sigamani-oxalatech/agentic-planner-8b)
 
