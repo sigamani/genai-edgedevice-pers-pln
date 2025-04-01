@@ -34,13 +34,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Clone and build llama.cpp
-        run: |
-          git clone https://github.com/ggerganov/llama.cpp.git
-          cd llama.cpp
-          cmake . -DLLAMA_BLAS=ON -DLLAMA_NATIVE=ON
-          make -j$(nproc)
-
       - name: Download Quantised Mistral Model
         run: |
           mkdir -p models
