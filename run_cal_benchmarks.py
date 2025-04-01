@@ -294,25 +294,15 @@ if __name__ == "__main__":
         def on_llm_new_token(self, token, **kwargs):
             self.callback_fn(token)
 
-    for example in EXAMPLES:
-        example["system_metrics"] = get_system_metrics()
-        final = compiled_graph.invoke(example)
-        logger = BenchmarkLogger(model_name="mistral-7b-instruct.Q3_K_M", n_predict=124)
-        logger.start(example["task"])
+    example==EXAMPLES[0]
+    example["system_metrics"] = get_system_metrics()
+    final = compiled_graph.invoke(example)
+    logger = BenchmarkLogger(model_name="mistral-7b-instruct.Q3_K_M", n_predict=124)
+    logger.start(example["task"])
 
-        # Inject callback to track tokens
-        token_handler = TokenCallbackHandler(logger.token_callback)
-        compiled_graph.invoke(example, config={"callbacks": [token_handler]})
+    # Inject callback to track tokens
+    token_handler = TokenCallbackHandler(logger.token_callback)
+    compiled_graph.invoke(example, config={"callbacks": [token_handler]})
 
-        logger.stop()
-        print(logger.results())  # or add to a final results list
-     #   wandb.log(logger.results())
-
-        if "judgement" in final and final["judgement"]["score"] == 1:
-            correct += 1
-        total += 1
-    print(f"\n Final Accuracy: {correct}/{total} = {(correct/total)*100:.2f}%")
- #   wandb.log({"final_accuracy": correct / total})
-#    wandb.finish()
-
-# --- End of run_benchmarks.py ---
+    logger.stop()
+    print(logger.results())  
