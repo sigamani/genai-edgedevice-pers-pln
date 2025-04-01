@@ -29,7 +29,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt || true
-
+          
       - name: ✅ Run unit tests
         run: |
           pytest tests/ || echo "No tests directory yet"
@@ -38,11 +38,21 @@ jobs:
         run: |
           mkdir -p models
           wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q3_K_M.gguf -O models/mistral-7b-instruct-v0.2.Q3_K_M.gguf
-    
-      - name: 🛠️ Build Docker image
-        run: |
-          docker build -t agentic-planner .
+     
+      - name: Set WANDB_API_KEY
+        run: echo "WANDB_API_KEY=${{ secrets.WANDB_API_KEY }}" >> $GITHUB_ENV
 
       - name: 🚀 Run Benchmarks
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
         run: |
           python run_cal_benchmarks.py
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+  
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/agentic-planner-8b:latest .
+  
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/agentic-planner-8b:latest
