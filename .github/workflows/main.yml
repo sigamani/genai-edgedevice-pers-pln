@@ -33,7 +33,12 @@ jobs:
       - name: ✅ Run unit tests
         run: |
           pytest tests/ || echo "No tests directory yet"
-
+          
+      - name: Download Mistral GGUF
+        run: |
+          mkdir -p models
+          wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q3_K_M.gguf -O models/mistral-7b-instruct-v0.2.Q3_K_M.gguf
+    
       - name: 🛠️ Build Docker image
         run: |
           docker build -t agentic-planner .
