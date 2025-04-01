@@ -294,7 +294,7 @@ if __name__ == "__main__":
         def on_llm_new_token(self, token, **kwargs):
             self.callback_fn(token)
 
-    example==EXAMPLES[0]
+    example=EXAMPLES[0]
     example["system_metrics"] = get_system_metrics()
     final = compiled_graph.invoke(example)
     logger = BenchmarkLogger(model_name="mistral-7b-instruct.Q3_K_M", n_predict=124)
