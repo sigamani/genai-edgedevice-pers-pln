@@ -7,7 +7,7 @@ This branch serves as a separate environment to add in core funtionality missing
 - Fixing the broken CI/CD pipeline  
 - Adding unit tests for core functionality  
 - Refactoring the codebase for improved modularity  
-- Building and containerising the application with Docker  
+- Building and containerising this application with Docker  
 - Integrating deployment via MLC-LLM  
 - Extending and automating benchmarking processes  
 - Enhancing the agentic workflow by adding a routing step post-input prompt  
