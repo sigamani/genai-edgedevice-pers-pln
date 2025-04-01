@@ -12,9 +12,7 @@ jobs:
 
     env:
       HF_API_KEY: ${{ secrets.HF_API_KEY }}
-      WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
-      LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
-
+      
     steps:
       - name: 🧾 Checkout repo
         uses: actions/checkout@v3
@@ -38,13 +36,8 @@ jobs:
         run: |
           mkdir -p models
           wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q3_K_M.gguf -O models/mistral-7b-instruct-v0.2.Q3_K_M.gguf
-     
-      # - name: Set WANDB_API_KEY
-      #   run: echo "WANDB_API_KEY=${{ secrets.WANDB_API_KEY }}" >> $GITHUB_ENV
 
       - name: 🚀 Run Benchmarks
-      #   env:
-      #     WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
         run: |
           python run_cal_benchmarks.py
 
