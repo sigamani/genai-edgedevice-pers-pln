@@ -268,8 +268,8 @@ compiled_graph = graph.compile()
 
 # --- Entry Point for Test Execution ---
 if __name__ == "__main__":
-    import wandb
-    wandb.init(project="agentic-planner-8b", name="run_benchmarks_eval", config={"model": "mistral-7b-instruct.Q3_K_M", "n_predict": 124})
+ #   import wandb
+ #   wandb.init(project="agentic-planner-8b", name="run_benchmarks_eval", config={"model": "mistral-7b-instruct.Q3_K_M", "n_predict": 124})
 
     # Load calendar scheduling examples from file
     dataset_path = "data/calendar_scheduling_langsmith_ready.jsonl"
@@ -306,13 +306,13 @@ if __name__ == "__main__":
 
         logger.stop()
         print(logger.results())  # or add to a final results list
-        wandb.log(logger.results())
+     #   wandb.log(logger.results())
 
         if "judgement" in final and final["judgement"]["score"] == 1:
             correct += 1
         total += 1
     print(f"\n Final Accuracy: {correct}/{total} = {(correct/total)*100:.2f}%")
-    wandb.log({"final_accuracy": correct / total})
-    wandb.finish()
+ #   wandb.log({"final_accuracy": correct / total})
+#    wandb.finish()
 
 # --- End of run_benchmarks.py ---
