@@ -6,16 +6,16 @@ on:
   pull_request:
     branches: [post-submission-work]
 
-# jobs:
-#   build-and-test:
-#     runs-on: ubuntu-latest
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
 
-#     env:
-#       HF_API_KEY: ${{ secrets.HF_API_KEY }}
+    env:
+      HF_API_KEY: ${{ secrets.HF_API_KEY }}
       
-#     steps:
-#       - name: 🧾 Checkout repo
-#         uses: actions/checkout@v3
+    steps:
+      - name: 🧾 Checkout repo
+        uses: actions/checkout@v3
 
 #       - name: 🐍 Set up Python
 #         uses: actions/setup-python@v4
