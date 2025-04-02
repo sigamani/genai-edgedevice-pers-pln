@@ -30,16 +30,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git cmake build-essential wget curl
 
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      # - name: Install Python dependencies
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     pip install -r requirements.txt
 
-      - name: Download Quantised Mistral Model
-        run: |
-          mkdir -p models
-          wget -O models/mistral-7b-instruct-v0.2.Q3_K_M.gguf \
-            https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q3_K_M.gguf
+      # - name: Download Quantised Mistral Model
+      #   run: |
+      #     mkdir -p models
+      #     wget -O models/mistral-7b-instruct-v0.2.Q3_K_M.gguf \
+      #       https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q3_K_M.gguf
 
       - name: Run Calendar Benchmark
         run: |
