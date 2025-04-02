@@ -18,11 +18,14 @@ jobs:
         with:
           python-version: 3.10
 
+      - name: Confirm Python version
+        run: python --version
+  
       - name: Cache llama.cpp build
         uses: actions/cache@v3
         with:
           path: llama.cpp/build
-          key: llama-cpp-${{ runner.os }}-v1
+          key: llama-cpp-${{ runner.os }}-v2
 
       - name: Install system dependencies
         run: |
