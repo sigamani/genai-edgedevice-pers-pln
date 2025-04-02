@@ -50,9 +50,9 @@ jobs:
       - name: Set image name
         id: vars
         run: echo "IMAGE=agentic-planner-8b" >> $GITHUB_ENV
-
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE:latest .
+  
+      - name: Build Multi-Arch (MAC metal and linux) Docker image
+        run: docker build --platform linux/amd64,linux/arm64 -t ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE:latest .
 
       - name: Push Docker image to Docker Hub
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE:latest
