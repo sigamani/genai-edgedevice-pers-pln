@@ -13,19 +13,26 @@ RUN apt-get update && apt-get install -y \
 # Install Python deps
 # ------------------------
 COPY requirements.txt .
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# ------------------------
 # Disable f16 optimisations to avoid NEON inline errors
-ENV CMAKE_ARGS="-DLLAMA_F16=OFF -DLLAMA_NATIVE=OFF"
+ENV CMAKE_ARGS="-DLLAMA_F16=OFF -DLLAMA_NATIVE=OFF -DCMAKE_BUILD_TYPE=Release"
 
-RUN pip install --upgrade pip && pip install -r requirements.txt && pip install llama-cpp-python --no-cache-dir
-# # ------------------------
-# # Clone and build llama.cpp
-# # ------------------------
-# RUN git clone https://github.com/ggerganov/llama.cpp.git && \
-#     cd llama.cpp && \
-#     cmake . -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=OFF -DLLAMA_ACCEL=OFF -DCMAKE_BUILD_TYPE=Release && \
-#     make -j$(nproc)
+# ------------------------
+# Clone and build llama.cpp
+# ------------------------
+RUN git clone https://github.com/ggerganov/llama.cpp.git && \
+    cd llama.cpp && \
+    cmake $CMAKE_ARGS . && \
+    make -j$(nproc)
+
+# ------------------------
+# Download quantised Mistral model
+# ------------------------
+RUN mkdir -p /app/models && \
+    wget -O /app/models/mistral-7b-instruct-v0.2.Q3_K_M.gguf \
+    https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q3_K_M.gguf
 
 # ------------------------
 # Copy your app
