@@ -20,7 +20,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # ------------------------
 RUN git clone https://github.com/ggerganov/llama.cpp.git && \
     cd llama.cpp && \
-    cmake . -DLLAMA_BLAS=ON -DLLAMA_NATIVE=ON && \
+    cmake . -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=OFF -DLLAMA_ACCEL=OFF -DCMAKE_BUILD_TYPE=Release && \
     make -j$(nproc)
 
 # ------------------------
