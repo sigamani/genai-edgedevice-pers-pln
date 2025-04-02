@@ -13,22 +13,22 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Force Python 3.10 and confirm
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-      - run: python --version
+      # - name: Force Python 3.10 and confirm
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version: "3.10"
+      # - run: python --version
   
-      - name: Cache llama.cpp build
-        uses: actions/cache@v3
-        with:
-          path: llama.cpp/build
-          key: llama-cpp-${{ runner.os }}-v2
+      # - name: Cache llama.cpp build
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: llama.cpp/build
+      #     key: llama-cpp-${{ runner.os }}-v2
 
       - name: Install system dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y git cmake build-essential wget curl
+         sudo apt-get update
+     #    sudo apt-get install -y git cmake build-essential wget curl
 
       # - name: Install Python dependencies
       #   run: |
@@ -40,10 +40,6 @@ jobs:
       #     mkdir -p models
       #     wget -O models/mistral-7b-instruct-v0.2.Q3_K_M.gguf \
       #       https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q3_K_M.gguf
-
-      - name: Run Calendar Benchmark
-        run: |
-          python run_cal_benchmarks.py
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -59,17 +55,9 @@ jobs:
             -t ${{ secrets.DOCKERHUB_USERNAME }}/agentic-planner-8b:latest \
             .
             
-      # - name: Push Docker image to Docker Hub
-      #   run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-
-      # - name: Set image name
-      #   id: vars
-      #   run: echo "IMAGE=agentic-planner-8b" >> $GITHUB_ENV
+      - name: Run Calendar Benchmark
+        run: |
+          python run_cal_benchmarks.py
+          
   
-      # - name: Build Multi-Arch (MAC metal and linux) Docker image
-      #   run: docker build --platform linux/amd64,linux/arm64 -t ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE:latest .
-
-      # - name: Push Docker image to Docker Hub
-      #   run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE:latest
-      
 
