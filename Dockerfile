@@ -13,15 +13,19 @@ RUN apt-get update && apt-get install -y \
 # Install Python deps
 # ------------------------
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# ------------------------
-# Clone and build llama.cpp
-# ------------------------
-RUN git clone https://github.com/ggerganov/llama.cpp.git && \
-    cd llama.cpp && \
-    cmake . -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=OFF -DLLAMA_ACCEL=OFF -DCMAKE_BUILD_TYPE=Release && \
-    make -j$(nproc)
+RUN pip install --upgrade pip && pip install -r requirements.txt
+# Disable f16 optimisations to avoid NEON inline errors
+ENV CMAKE_ARGS="-DLLAMA_F16=OFF -DLLAMA_NATIVE=OFF"
+
+RUN pip install --upgrade pip && pip install -r requirements.txt && pip install llama-cpp-python --no-cache-dir
+# # ------------------------
+# # Clone and build llama.cpp
+# # ------------------------
+# RUN git clone https://github.com/ggerganov/llama.cpp.git && \
+#     cd llama.cpp && \
+#     cmake . -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=OFF -DLLAMA_ACCEL=OFF -DCMAKE_BUILD_TYPE=Release && \
+#     make -j$(nproc)
 
 # ------------------------
 # Copy your app
