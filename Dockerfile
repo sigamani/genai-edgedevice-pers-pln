@@ -29,6 +29,6 @@ RUN git clone https://github.com/ggerganov/llama.cpp.git && \
 COPY . .
 
 # Set llama binary path as env var
-ENV LLAMA_BINARY=/app/llama.cpp/main
+ENV LLAMA_BINARY=/app/llama.cpp/build/bin/llama-run
 
 CMD ["python", "run_cal_benchmarks.py"]
