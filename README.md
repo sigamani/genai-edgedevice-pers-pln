@@ -17,12 +17,12 @@ Our focus is high planning accuracy, minimal latency, and offline privacy-preser
 
 ## Model Selection and Architecture
 
-- **Chosen model**: Meta's [LLaMA 2 7B](https://ai.meta.com/llama/) for its balance between reasoning capacity and edge deployability.
-- **Why 7B?**: Large enough for multi-step reasoning, small enough to run on mobile (<4 GB with quantization).
+- **Chosen model**: Meta's [LLaMA 3.1 8B](https://ai.meta.com/llama/) for its balance between reasoning capacity and edge deployability.
+- **Why 8B?**: Large enough for multi-step reasoning, small enough to run on mobile (<4 GB with quantization).
 - **Architecture tweaks**:
   - Retain rotary embeddings, RMSNorm.
   - Extend context to 4K+ tokens via interpolation if needed.
-  - Instruction tuning with variants like LLaMA-2-7B-Chat.
+  - Instruction tuning with variants like LLaMA-3.1-8B-Instruct.
   - Add formatting tokens (e.g. `[CALENDAR]`) to separate context parts.
   - Optionally use grouped-query attention for memory efficiency (with caution).
 
@@ -38,20 +38,20 @@ Our focus is high planning accuracy, minimal latency, and offline privacy-preser
 - Use GPT-4 to create & verify high-quality solutions (distillation).
 - Mix synthetic and teacher-model data to balance realism and volume.
 
-### 2. **Supervised Fine-Tuning (SFT)**
+### 2. **Supervised Fine-Tuning (SFT) (see other branch) **
 - Format inputs as `prompt` (with constraints) and `response` (step-by-step reasoning + final plan).
 - Use [LoRA](https://arxiv.org/abs/2106.09685) or [QLoRA](https://arxiv.org/abs/2305.14314) for efficient tuning.
 - Train from easy to hard (curriculum learning).
 - Validate using held-out NATURAL PLAN examples.
 
-### 3. **Optional Enhancements**
+### 3. **Enhancements**
 - Add reasoning supervision (chain-of-thought).
-- Distill from larger models.
-- Use reward modelling or RLHF if performance plateaus.
+- Distill from larger models (not enough time to implement).
+- Use reward modelling or RLHF if performance plateaus (not enough time to implement).
 
 ---
 
-## Evaluation Protocol
+## Evaluation Protocol (see run_benchmarks.py)
 
 - **Accuracy**: Solve rate on NATURAL PLAN tasks. Use validator scripts to check constraints.
 - **Latency**: Target <30s end-to-end on phones or Jetson boards. Measure token/sec and total generation time.
@@ -90,6 +90,8 @@ Preferences: {...}
 ## Conclusion
 This strategy delivers a 7B AI planner with high accuracy, fast latency, and reliable integration into assistants — all running on-device. It leverages instruction tuning, data distillation, LoRA fine-tuning, and MLC quantization to build a robust planner that performs nearly on par with GPT-4 for domain-specific planning.
 
+---
+## How to run
 
 ```bash
 mlc_llm build --model path/to/llama-2-7b-planner \
