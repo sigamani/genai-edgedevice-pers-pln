@@ -91,7 +91,7 @@ Preferences: {...}
 This strategy delivers a 7B AI planner with high accuracy, fast latency, and reliable integration into assistants — all running on-device. It leverages instruction tuning, data distillation, LoRA fine-tuning, and MLC quantization to build a robust planner that performs nearly on par with GPT-4 for domain-specific planning.
 
 ---
-## How to run
+## Build Backend
 
 ```bash
 mlc_llm build --model path/to/llama-2-7b-planner \
